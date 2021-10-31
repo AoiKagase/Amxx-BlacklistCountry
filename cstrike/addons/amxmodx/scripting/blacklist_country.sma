@@ -15,14 +15,14 @@ new Array:g_Blacklists;
 
 public plugin_init()
 { 
-	register_plugin(PLUGIN_NAME, PLUGIN_VERSION, PLUGIN_AUTHOR);
-	create_cvar	   (PLUGIN_NAME, PLUGIN_VERSION, FCVAR_SPONLY|FCVAR_SERVER);
+	register_plugin	(PLUGIN_NAME, PLUGIN_VERSION, PLUGIN_AUTHOR);
+	create_cvar	    (PLUGIN_NAME, PLUGIN_VERSION, FCVAR_SPONLY|FCVAR_SERVER);
 }
 
 public plugin_cfg()
 {
-	new iniFile	[64];
-	new sConfigDir	[64];
+	new iniFile     [64];
+	new sConfigDir  [64];
 	get_configsdir(sConfigDir, charsmax(sConfigDir));
 	formatex(iniFile, charsmax(iniFile), "%s/%s", sConfigDir, BLACKLIST);
 
@@ -35,11 +35,11 @@ load_blacklist_country(sFileName[])
 		return;
 
 	new sRec[4];
-	new sRecLen 	= charsmax(sRec);
+	new sRecLen     = charsmax(sRec);
 
-	new fp 			= fopen(sFileName, "r");
+	new fp          = fopen(sFileName, "r");
 
-	g_Blacklists 	= ArrayCreate(4);
+	g_Blacklists    = ArrayCreate(4);
 
 	while(!feof(fp))
 	{
@@ -64,7 +64,7 @@ load_blacklist_country(sFileName[])
 stock bool:IsLocalIp(IP[MAX_IP_LENGTH])
 {
 	new tIP[MAX_IP_LENGTH];
-	
+ 
 	copy(tIP,3,IP);
 
 	if(equal(tIP,"10.") || equal(tIP,"127"))
@@ -80,17 +80,18 @@ stock bool:IsLocalIp(IP[MAX_IP_LENGTH])
 
 public client_connect(id)
 {
-	new userip	[MAX_IP_LENGTH];
-	get_user_ip(id, userip, charsmax(userip),1);		
-	new CC		[4];
-	new country	[45];
+	new userip      [MAX_IP_LENGTH];
+	get_user_ip(id, userip, charsmax(userip),1);     
+
+	new CC          [4];
+	new country     [45];
 
 	geoip_code3_ex(userip, CC);
-	geoip_country_ex(userip, country, charsmax(country), 1);
+	geoip_country_ex(userip, country, charsmax(country), -1);
 
 	if(strlen(userip) == 0)
 	{
-		get_user_ip(id, userip, charsmax(userip),1);		
+		get_user_ip(id, userip, charsmax(userip),1);     
 		if(!IsLocalIp(userip))
 			log_amx("%s made a error when passed though geoip", userip);
 		return PLUGIN_HANDLED;
@@ -98,8 +99,9 @@ public client_connect(id)
 
 	if (ArrayFindString(g_Blacklists, CC) > -1)
 	{
-		server_cmd("kick #%d Your connecting country (%s) is denied.",get_user_userid(id), country);
-		client_print(0, print_chat, "%n was kicked because he is from %s", id, country);
+		server_cmd("kick #%d Your connecting country (%s) is denied.", get_user_userid(id), country);
+		client_print(0, print_chat, "^3[Blaclist Country]^1 %n was kicked because he is from %s", id, country);
+		log_amx("[BC] %n was kicked, From %s", id, country);
 	}
 	return PLUGIN_HANDLED;
 }
