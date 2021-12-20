@@ -7,7 +7,7 @@
 #pragma semicolon 1
 
 new const PLUGIN_NAME	[] = "Blacklist Country";
-new const PLUGIN_VERSION[] = "0.1";
+new const PLUGIN_VERSION[] = "0.2";
 new const PLUGIN_AUTHOR [] = "Aoi.Kagase";
 new const BLACKLIST		[] = "blacklist_country.ini";
 new Array:g_Blacklists;
@@ -61,7 +61,7 @@ load_blacklist_country(sFileName[])
 	fclose(fp);
 } 
 
-stock bool:IsLocalIp(IP[MAX_IP_LENGTH])
+stock bool:IsLocalIp(const IP[])
 {
 	new tIP[MAX_IP_LENGTH];
  
@@ -78,30 +78,53 @@ stock bool:IsLocalIp(IP[MAX_IP_LENGTH])
 	return false;
 }
 
-public client_connect(id)
+public client_connectex(id, const name[], const ip[], reason[128])
 {
-	new userip      [MAX_IP_LENGTH];
-	get_user_ip(id, userip, charsmax(userip),1);     
+    new CC          [4];
+    new country     [45];
 
-	new CC          [4];
-	new country     [45];
+    if (!IsLocalIp(ip) && geoip_code3_ex(ip, CC) && geoip_country_ex(ip, country, charsmax(country), -1))
+    {
+        if (ArrayFindString(g_Blacklists, CC) > -1)
+        {
+            formatex(reason, charsmax(reason), "Your connecting country (%s) is denied.", country);
+            client_print(0, print_chat, "^3[Blaclist Country]^1 %s was kicked because he is from %s", name, country);
+            log_amx("[BC] %s was kicked, From %s", name, country);
+            return PLUGIN_HANDLED;
+        }
+    }
+    else
+    {
+        log_amx("%s made a error when passed though geoip", ip);
+    }
 
-	geoip_code3_ex(userip, CC);
-	geoip_country_ex(userip, country, charsmax(country), -1);
-
-	if(strlen(userip) == 0)
-	{
-		get_user_ip(id, userip, charsmax(userip),1);     
-		if(!IsLocalIp(userip))
-			log_amx("%s made a error when passed though geoip", userip);
-		return PLUGIN_HANDLED;
-	}
-
-	if (ArrayFindString(g_Blacklists, CC) > -1)
-	{
-		server_cmd("kick #%d Your connecting country (%s) is denied.", get_user_userid(id), country);
-		client_print(0, print_chat, "^3[Blaclist Country]^1 %n was kicked because he is from %s", id, country);
-		log_amx("[BC] %n was kicked, From %s", id, country);
-	}
-	return PLUGIN_HANDLED;
+    return PLUGIN_CONTINUE;
 }
+
+// public client_connect(id)
+// {
+// 	new userip      [MAX_IP_LENGTH];
+// 	get_user_ip(id, userip, charsmax(userip),1);     
+
+// 	new CC          [4];
+// 	new country     [45];
+
+// 	geoip_code3_ex(userip, CC);
+// 	geoip_country_ex(userip, country, charsmax(country), -1);
+
+// 	if(strlen(userip) == 0)
+// 	{
+// 		get_user_ip(id, userip, charsmax(userip),1);     
+// 		if(!IsLocalIp(userip))
+// 			log_amx("%s made a error when passed though geoip", userip);
+// 		return PLUGIN_HANDLED;
+// 	}
+
+// 	if (ArrayFindString(g_Blacklists, CC) > -1)
+// 	{
+// 		server_cmd("kick #%d Your connecting country (%s) is denied.", get_user_userid(id), country);
+// 		client_print(0, print_chat, "^3[Blaclist Country]^1 %n was kicked because he is from %s", id, country);
+// 		log_amx("[BC] %n was kicked, From %s", id, country);
+// 	}
+// 	return PLUGIN_HANDLED;
+// }
